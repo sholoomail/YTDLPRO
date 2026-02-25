@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دانلودر حرفه‌ای یوتیوب</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; background: linear-gradient(135deg, #1e1e2f 0%, #2d2b55 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .glass-panel { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        .loader { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #ef4444; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="glass-panel w-full max-w-md p-8 rounded-2xl m-4 text-white relative overflow-hidden">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-pink-600">یوتیوب دانلودر پرو</h1>
+            <p class="text-gray-400 text-sm">پشتیبانی شده توسط yt-dlp و پایتون</p>
+        </div>
+
+        <div class="relative mb-6">
+            <input type="text" id="videoUrl" class="w-full bg-gray-800/50 border border-gray-600 text-white rounded-xl py-4 px-5 pr-12 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all placeholder-gray-500" placeholder="لینک یوتیوب را اینجا پیست کنید...">
+            <button onclick="pasteFromClipboard()" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors" title="پیست از کلیپ‌بورد">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            </button>
+        </div>
+
+        <button onclick="fetchVideoInfo()" id="searchBtn" class="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-bold py-3 rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-95 flex justify-center items-center gap-2">
+            <span>دریافت اطلاعات ویدیو</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        </button>
+
+        <div id="loader" class="hidden flex justify-center my-6"><div class="loader"></div></div>
+        <div id="errorMsg" class="hidden bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl mt-4 text-sm text-center"></div>
+
+        <div id="resultArea" class="hidden mt-8 fade-in border-t border-gray-700 pt-6">
+            <div class="flex gap-4">
+                <img id="videoThumb" src="" alt="Thumbnail" class="w-32 h-20 object-cover rounded-lg shadow-md bg-gray-800">
+                <div class="flex-1">
+                    <h3 id="videoTitle" class="font-bold text-sm line-clamp-2 mb-2 text-gray-100">عنوان ویدیو</h3>
+                    <div class="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                        <span id="videoDuration">00:00</span>
+                        <span>•</span>
+                        <span id="videoUploader">Uploader</span>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mt-4">
+                <button onclick="startDownload('mp4')" class="bg-gray-700 hover:bg-gray-600 py-2 rounded-lg text-sm transition flex justify-center items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    MP4 (Video)
+                </button>
+                <button onclick="startDownload('mp3')" class="bg-gray-700 hover:bg-gray-600 py-2 rounded-lg text-sm transition flex justify-center items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                    MP3 (Audio)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let currentVideoUrl = '';
+
+        function getYouTubeID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('videoUrl').value = text;
+            } catch (err) { alert('دسترسی به کلیپ‌بورد امکان‌پذیر نیست.'); }
+        }
+
+        function formatDuration(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        async function fetchVideoInfo() {
+            const url = document.getElementById('videoUrl').value;
+            const videoId = getYouTubeID(url);
+            const loader = document.getElementById('loader');
+            const resultArea = document.getElementById('resultArea');
+            const errorMsg = document.getElementById('errorMsg');
+            const searchBtn = document.getElementById('searchBtn');
+
+            errorMsg.classList.add('hidden');
+            resultArea.classList.add('hidden');
+            
+            if (!videoId) { showError('لطفاً یک لینک معتبر یوتیوب وارد کنید.'); return; }
+
+            loader.classList.remove('hidden');
+            searchBtn.disabled = true;
+            searchBtn.classList.add('opacity-50');
+
+            try {
+                const response = await fetch(`${API_URL}/info`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'خطا در دریافت اطلاعات');
+
+                currentVideoUrl = url;
+                document.getElementById('videoThumb').src = data.thumbnail;
+                document.getElementById('videoTitle').innerText = data.title;
+                document.getElementById('videoDuration').innerText = formatDuration(data.duration);
+                document.getElementById('videoUploader').innerText = `${data.uploader} • ${formatNumber(data.view_count)} بازدید`;
+                resultArea.classList.remove('hidden');
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loader.classList.add('hidden');
+                searchBtn.disabled = false;
+                searchBtn.classList.remove('opacity-50');
+            }
+        }
+
+        async function startDownload(format) {
+            if (!currentVideoUrl) { showError('لطفا ابتدا لینک را بررسی کنید'); return; }
+            
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader w-4 h-4 border-2"></div> در حال پردازش...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: currentVideoUrl, format: format })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'خطا در دانلود');
+                }
+
+                // ایجاد لینک دانلود و کلیک خودکار
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `video.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+                
+                btn.innerHTML = '✅ دانلود شروع شد';
+                setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 3000);
+
+            } catch (err) {
+                showError(err.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
